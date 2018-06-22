@@ -51,7 +51,12 @@ class LinearClassifier(object):
       # Hint: Use np.random.choice to generate indices. Sampling with         #
       # replacement is faster than sampling without replacement.              #
       #########################################################################
-      pass
+    
+      #### gen random array of size batch_size with numbers in [0,...,num_train]      
+      batch_idx = np.random.choice(num_train, batch_size, replace = True) 
+      X_batch =  X[batch_idx]
+      y_batch = y[batch_idx]
+    
       #########################################################################
       #                       END OF YOUR CODE                                #
       #########################################################################
@@ -62,10 +67,11 @@ class LinearClassifier(object):
 
       # perform parameter update
       #########################################################################
-      # TODO:                                                                 #
-      # Update the weights using the gradient and the learning rate.          #
+    
+      self.W += -learning_rate * grad
+        
       #########################################################################
-      pass
+      
       #########################################################################
       #                       END OF YOUR CODE                                #
       #########################################################################
@@ -94,7 +100,10 @@ class LinearClassifier(object):
     # TODO:                                                                   #
     # Implement this method. Store the predicted labels in y_pred.            #
     ###########################################################################
-    pass
+    
+    scores = X.dot(self.W) # NxD * DxC = NxC
+    y_pred = np.argmax(scores, axis = 1) # Nx1
+    
     ###########################################################################
     #                           END OF YOUR CODE                              #
     ###########################################################################
