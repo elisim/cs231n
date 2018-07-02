@@ -75,7 +75,15 @@ class TwoLayerNet(object):
     # Store the result in the scores variable, which should be an array of      #
     # shape (N, C).                                                             #
     #############################################################################
-    pass
+    # from lectures:
+    ##     scores = W2*max(0,W1*X) 
+    ##     W2: HxC  
+    ##     W1: DxH  
+    ##     X:  NxD
+    
+    z1 = np.maximum(0, X.dot(W1) + b1) # (N,D) x (D,H) = (N,H)
+    scores = z1.dot(W2) + b2 
+    
     #############################################################################
     #                              END OF YOUR CODE                             #
     #############################################################################
@@ -92,19 +100,38 @@ class TwoLayerNet(object):
     # in the variable loss, which should be a scalar. Use the Softmax           #
     # classifier loss.                                                          #
     #############################################################################
-    pass
+    
+    shift_scores = scores - np.max(scores, axis = 1).reshape(-1,1)
+    softmax_output = np.exp(shift_scores)/np.sum(np.exp(shift_scores), axis = 1).reshape(-1,1)
+    loss = -np.sum(np.log(softmax_output[range(N), list(y)]))
+    loss /= N
+    loss += reg * (np.sum(W1 * W1) + np.sum(W2 * W2))
+    
     #############################################################################
     #                              END OF YOUR CODE                             #
     #############################################################################
 
     # Backward pass: compute gradients
+    
     grads = {}
+    
     #############################################################################
     # TODO: Compute the backward pass, computing the derivatives of the weights #
     # and biases. Store the results in the grads dictionary. For example,       #
     # grads['W1'] should store the gradient on W1, and be a matrix of same size #
     #############################################################################
-    pass
+    
+    dscores = softmax_output.copy()
+    dscores[range(N), list(y)] -= 1
+    dscores /= N
+    grads['W2'] = z1.T.dot(dscores) + reg * W2
+    grads['b2'] = np.sum(dscores, axis = 0)
+    
+    dh = dscores.dot(W2.T)
+    dh_ReLu = (z1 > 0) * dh
+    grads['W1'] = X.T.dot(dh_ReLu) + reg * W1
+    grads['b1'] = np.sum(dh_ReLu, axis = 0)
+    
     #############################################################################
     #                              END OF YOUR CODE                             #
     #############################################################################
