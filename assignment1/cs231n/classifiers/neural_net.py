@@ -175,7 +175,10 @@ class TwoLayerNet(object):
       # TODO: Create a random minibatch of training data and labels, storing  #
       # them in X_batch and y_batch respectively.                             #
       #########################################################################
-      pass
+        
+      idx = np.random.choice(num_train, batch_size) # random array in [0,1,...,num_train] with size batch_size
+      X_batch, y_batch = X[idx], y[idx]
+        
       #########################################################################
       #                             END OF YOUR CODE                          #
       #########################################################################
@@ -190,7 +193,12 @@ class TwoLayerNet(object):
       # using stochastic gradient descent. You'll need to use the gradients   #
       # stored in the grads dictionary defined above.                         #
       #########################################################################
-      pass
+       
+      self.params['W1'] = self.params['W1'] - learning_rate * grads['W1']
+      self.params['W2'] = self.params['W2'] - learning_rate * grads['W2']
+      self.params['b1'] = self.params['b1'] - learning_rate * grads['b1']
+      self.params['b2'] = self.params['b2'] - learning_rate * grads['b2']
+      
       #########################################################################
       #                             END OF YOUR CODE                          #
       #########################################################################
@@ -234,8 +242,18 @@ class TwoLayerNet(object):
 
     ###########################################################################
     # TODO: Implement this function; it should be VERY simple!                #
-    ###########################################################################
-    pass
+    
+    #### Unpack variables from the params dictionary
+    W1, b1 = self.params['W1'], self.params['b1']
+    W2, b2 = self.params['W2'], self.params['b2']
+    N, D = X.shape
+    
+    # from lectures:
+    ##     scores = W2*max(0,W1*X) 
+    z1 = np.maximum(0, X.dot(W1) + b1) # (N,D) x (D,H) = (N,H)
+    scores = z1.dot(W2) + b2 
+    y_pred = np.argmax(scores, axis = 1) # take the column index in which the score is max
+    
     ###########################################################################
     #                              END OF YOUR CODE                           #
     ###########################################################################
