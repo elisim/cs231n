@@ -28,7 +28,7 @@ class TwoLayerNet(object):
         Initialize a new network.
 
         Inputs:
-        - input_dim: An integer giving the size of the input
+        - input_dim: An integer giving the size of the input 
         - hidden_dim: An integer giving the size of the hidden layer
         - num_classes: An integer giving the number of classes to classify
         - weight_scale: Scalar giving the standard deviation for random
@@ -47,7 +47,14 @@ class TwoLayerNet(object):
         # and biases using the keys 'W1' and 'b1' and second layer                 #
         # weights and biases using the keys 'W2' and 'b2'.                         #
         ############################################################################
-        pass
+        
+        std = weight_scale # standard deviation equal to weight_scale
+        self.params['W1'] = std * np.random.randn(input_dim, hidden_dim)
+        self.params['b1'] = np.zeros(hidden_dim)
+        self.params['W2'] = std * np.random.randn(hidden_dim, num_classes)
+        self.params['b2'] = np.zeros(num_classes)
+        
+      
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
@@ -77,16 +84,22 @@ class TwoLayerNet(object):
         # TODO: Implement the forward pass for the two-layer net, computing the    #
         # class scores for X and storing them in the scores variable.              #
         ############################################################################
-        pass
+        
+        # Unpack variables from the params dictionary
+        W1, b1 = self.params['W1'], self.params['b1']
+        W2, b2 = self.params['W2'], self.params['b2']
+        
+        out1, chache1 = affine_relu_forward(X,W1,b1) # affine - relu 
+        out2, chache2 = affine_forward(out1,W2,b2) # affine 
+        scores = out2 
+        
+        if y is None:
+            return scores
+          
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
 
-        # If y is None then we are in test mode so just return scores
-        if y is None:
-            return scores
-
-        loss, grads = 0, {}
         ############################################################################
         # TODO: Implement the backward pass for the two-layer net. Store the loss  #
         # in the loss variable and gradients in the grads dictionary. Compute data #
@@ -97,7 +110,25 @@ class TwoLayerNet(object):
         # automated tests, make sure that your L2 regularization includes a factor #
         # of 0.5 to simplify the expression for the gradient.                      #
         ############################################################################
-        pass
+        loss = None
+        grads = {}
+        
+        # loss with L2 regularization
+        loss, scores_grad = softmax_loss(scores, y)
+        L2_reg = 0.5 * self.reg * (np.sum(W1*W1) + np.sum(W2*W2))
+        loss += L2_reg
+        
+        # backprop second layer
+        dx2, dw2, db2 = affine_backward(scores_grad, chache2)
+        grads['W2'] = dw2 + self.reg * W2
+        grads['b2'] = db2
+        
+        # backprop first layer
+        dx1, dw1, db1 = affine_relu_backward(dx2, chache1)
+        grads['W1'] = dw1 + self.reg * W1
+        grads['b1'] = db1
+        
+        
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
