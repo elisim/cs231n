@@ -195,7 +195,21 @@ class FullyConnectedNet(object):
         # beta2, etc. Scale parameters should be initialized to ones and shift     #
         # parameters should be initialized to zeros.                               #
         ############################################################################
-        pass
+        
+        std = weight_scale # standard deviation equal to weight_scale
+        layer_input_dim = input_dim # the current layer input dim, starting with the first layer
+
+        # input-> hidden_layer_1 -> hidden_layer_2 -> ... -> hidden_layer_last
+        for idx, dim in enumerate(hidden_dims):
+            layer_num = idx+1
+            self.params['W' + layer_num] = std * np.random.randn(layer_input_dim, dim)
+            self.params['b' + layer_num] = np.zeros(dim)
+            layer_input_dim = dim
+        
+        # hidden_layer_last -> output
+        self.params['W' + self.num_layers] = std * np.random.randn(layer_input_dim, num_classes)
+        self.params['b' + self.num_layers] = np.zeros(num_classes)
+        
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
