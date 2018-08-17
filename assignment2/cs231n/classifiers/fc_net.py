@@ -273,18 +273,25 @@ class FullyConnectedNet(object):
         # layer, etc.                                                              #
         ############################################################################
         
-        caches = {}
-        layer_data = X
+        caches = {} # used for backprop 
+        layer_data = X # data to apply the activation
+        dropout_cache = {} # cache for dropout layer
+        
         for layer_idx in range(self.num_layers-1):
             layer_num = str(layer_idx+1)
             W, b = self.params['W' + layer_num], self.params['b' + layer_num]
+            
+            # use batch norm or not
             if self.normalization == 'batchnorm':
                 gamma, beta = self.params['gamma' + layer_num], self.params['beta' + layer_num]
                 layer_data, caches[layer_num] = affine_bn_relu_forward(layer_data,W,b, gamma, beta, self.bn_params[layer_idx])
             else:    
                 layer_data, caches[layer_num] = affine_relu_forward(layer_data,W,b)
+            
+            # use dropout or not
+            if self.use_dropout:
+                layer_data, dropout_cache[layer_num] = dropout_forward(layer_data, self.dropout_param)
          
-        
         last_layer_num = str(self.num_layers)    
         W_last, b_last = self.params['W' + last_layer_num], self.params['b' + last_layer_num]    
         scores, caches[last_layer_num] = affine_forward(layer_data, W_last, b_last)
@@ -331,11 +338,17 @@ class FullyConnectedNet(object):
         for layer_idx in range(self.num_layers-1, 0, -1):
             layer_num = str(layer_idx)
             
+            # using dropout (last layer after ReLU, so should backprop first!)
+            if self.use_dropout:
+                dx = dropout_backward(dx, dropout_cache[layer_num])
+                
             # run layer backward pass
             if self.normalization == 'batchnorm':
                 dx, dw, db, dgamma, dbeta = affine_bn_relu_backward(dx, caches[layer_num])
             else:
                 dx, dw, db = affine_relu_backward(dx, caches[layer_num])
+            
+           
             
             # update grads
             grads['W' + layer_num] = dw + self.reg * self.params['W' + layer_num] # regularize gradients
