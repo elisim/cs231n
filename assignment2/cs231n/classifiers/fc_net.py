@@ -204,8 +204,12 @@ class FullyConnectedNet(object):
             layer_num = str(idx+1)
             self.params['W' + layer_num] = std * np.random.randn(layer_input_dim, dim)
             self.params['b' + layer_num] = np.zeros(dim)
-            layer_input_dim = dim
-        
+            if self.normalization == 'batchnorm':
+                # after afiine_layer, we get new dims
+                self.params['gamma' + layer_num] = np.ones(dim) 
+                self.params['beta' + layer_num] = np.zeros(dim)
+            layer_input_dim = dim    
+                
         # hidden_layer_last -> output
         self.params['W' + str(self.num_layers)] = std * np.random.randn(layer_input_dim, num_classes)
         self.params['b' + str(self.num_layers)] = np.zeros(num_classes)
@@ -274,8 +278,13 @@ class FullyConnectedNet(object):
         for layer_idx in range(self.num_layers-1):
             layer_num = str(layer_idx+1)
             W, b = self.params['W' + layer_num], self.params['b' + layer_num]
-            layer_data, caches[layer_num] = affine_relu_forward(layer_data,W,b)
-            
+            if self.normalization == 'batchnorm':
+                gamma, beta = self.params['gamma' + layer_num], self.params['beta' + layer_num]
+                layer_data, caches[layer_num] = affine_bn_relu_forward(layer_data,W,b, gamma, beta, self.bn_params[layer_idx])
+            else:    
+                layer_data, caches[layer_num] = affine_relu_forward(layer_data,W,b)
+         
+        
         last_layer_num = str(self.num_layers)    
         W_last, b_last = self.params['W' + last_layer_num], self.params['b' + last_layer_num]    
         scores, caches[last_layer_num] = affine_forward(layer_data, W_last, b_last)
@@ -316,17 +325,29 @@ class FullyConnectedNet(object):
         
         # backprop last layer
         dx, dw, db = affine_backward(scores_grad, caches[last_layer_num])
-        grads['W' + last_layer_num] = dw + self.reg * self.params['W' + last_layer_num]
+        grads['W' + last_layer_num] = dw + self.reg * self.params['W' + last_layer_num] # regularize gradients
         grads['b' + last_layer_num] = db 
         
         for layer_idx in range(self.num_layers-1, 0, -1):
             layer_num = str(layer_idx)
-            dx, dw, db = affine_relu_backward(dx, caches[layer_num])
-            grads['W' + layer_num] = dw + self.reg * self.params['W' + layer_num]
+            
+            # run layer backward pass
+            if self.normalization == 'batchnorm':
+                dx, dw, db, dgamma, dbeta = affine_bn_relu_backward(dx, caches[layer_num])
+            else:
+                dx, dw, db = affine_relu_backward(dx, caches[layer_num])
+            
+            # update grads
+            grads['W' + layer_num] = dw + self.reg * self.params['W' + layer_num] # regularize gradients
             grads['b' + layer_num] = db
+            if self.normalization == 'batchnorm':
+                grads['gamma' + layer_num], grads['beta' + layer_num] = dgamma, dbeta
  
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
 
         return loss, grads
+
+    
+    
