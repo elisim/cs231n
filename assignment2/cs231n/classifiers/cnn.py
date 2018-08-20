@@ -53,7 +53,29 @@ class ThreeLayerConvNet(object):
         # **the width and height of the input are preserved**. Take a look at      #
         # the start of the loss() function to see how that happens.                #                           
         ############################################################################
-        pass
+        
+        C, H, W = input_dim
+        F = num_filters
+        
+        # W1 contains F filters, with depth C and size filter_size*filter*size
+        self.params['W1'] = weight_scale * np.random.randn(F, C, filter_size, filter_size)
+        # bias to each filter
+        self.params['b1'] = np.zeros(F)
+        
+        # after conv layer we have 2x2 pool layer with stride 2. therefore, the output have shape:
+        # width = (W - pool_filter_size)/pool_stride + 1 = (W-2)/2+1 = W/2
+        # height = (H - pool_filter_size)/pool_stride + 1 = (H-2)/2+1 = H/2
+        # depth = F
+        
+        # therefore, num of params to affine is F*(W/2)*(H/2)
+        
+        self.params['W2'] = weight_scale * np.random.randn(F*int(W/2)*int(H/2), hidden_dim)
+        self.params['b2'] = np.zeros(hidden_dim)
+        
+        self.params['W3'] = weight_scale * np.random.randn(hidden_dim, num_classes)
+        self.params['b3'] = np.zeros(num_classes)
+        
+        
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
