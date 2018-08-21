@@ -111,7 +111,14 @@ class ThreeLayerConvNet(object):
         # Remember you can use the functions defined in cs231n/fast_layers.py and  #
         # cs231n/layer_utils.py in your implementation (already imported).         #
         ############################################################################
-        pass
+        
+        # conv - relu - 2x2 max pool - affine - relu - affine - softmax
+        conv_out, conv_cache = conv_relu_pool_forward(X, W1, b1, conv_param, pool_param)
+        a1_out, a1_cache = affine_relu_forward(conv_out, W2, b2)
+        a2_out, a2_cache = affine_forward(a1_out, W3, b3)
+        scores = a2_out
+        
+        
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
@@ -130,7 +137,26 @@ class ThreeLayerConvNet(object):
         # automated tests, make sure that your L2 regularization includes a factor #
         # of 0.5 to simplify the expression for the gradient.                      #
         ############################################################################
-        pass
+        
+        # loss with L2 regularization
+        loss, scores_grad = softmax_loss(scores, y)        
+        L2_reg = 0.5 * self.reg * (np.sum(W1*W1) + np.sum(W2*W2) + np.sum(W3*W3))
+        loss += L2_reg
+        
+        dx, dw3, db3 = affine_backward(scores_grad, a2_cache)
+        grads['W3'] = dw3 + self.reg * W3
+        grads['b3'] = db3
+        
+        dx, dw2, db2 = affine_relu_backward(dx, a1_cache)
+        grads['W2'] = dw2 + self.reg * W2
+        grads['b2'] = db2
+        
+        dx, dw1, db1 = conv_relu_pool_backward(dx, conv_cache)
+        grads['W1'] = dw1 + self.reg * W1
+        grads['b1'] = db1
+        
+        
+        
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
